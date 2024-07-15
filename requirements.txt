@@ -1,6 +1,6 @@
-tkinter
 ttkbootstrap
 google-generativeai
-whisper
+openai-whisper
 pygame
-speech_recognition
+random2
+SpeechRecognition
