@@ -53,7 +53,7 @@ Before you begin, ensure you have met the following requirements:
     ```
 
 2. **API Key**:
-   - Enter your API key in the provided field in the application.
+   - Enter your Google Cloud API Key.
 
 3. **Transcribe Audio**:
    - Click the "Transcribe Audio" button and select a WAV file to transcribe.
@@ -70,11 +70,11 @@ Before you begin, ensure you have met the following requirements:
 
 ## Files
 
-- main.py: The main script to run the application.
-- requirements.txt`: Lists all the dependencies needed for the project.
-- content.json: Contains a structured prompt for dialing transcripts.
-- content2.json: Contains a structured prompt for the behavior of the model against the 2 inputs, the conversation and the quality items to evaluate.
-- proff.json: Contains a structured prompt to tell the model to correct the inconsistencies in the call caused by the lack of accuracy of the transcription systems. 
+- `main.py`: The main script to run the application.
+- `requirements.txt`: Lists all the dependencies needed for the project.
+- `content.json`: Contains a structured prompt for dialing transcripts.
+- `content2.json`: Contains a structured prompt for the behavior of the model against the 2 inputs, the conversation and the quality items to evaluate.
+- `proff.json`: Contains a structured prompt to tell the model to correct the inconsistencies in the call caused by the lack of accuracy of the transcription systems. 
 
 ## Dependencies
 
