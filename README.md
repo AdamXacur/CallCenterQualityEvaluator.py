@@ -54,3 +54,20 @@ This project is licensed under the GNU General Public License v3 (GPLv3). See th
 ## Contact
 
 For questions or issues, please open an issue on GitHub or contact the maintainer at [xacurlopez@gmail.com].
+
+## Installation without PyCharm
+
+If you prefer not to use PyCharm, you can set up the project using these steps:
+
+1. **Clone the repository:**
+   git clone https://github.com/AdamXacur/CallCenterQualityEvaluator.py
+cd CallCenterQualityEvaluator.py
+2. **Create a virtual environment:**
+   python -m venv venv
+3. **Activate the virtual environment:**
+   venv\Scripts\activate
+4. **Install dependencies:**
+   pip install -r requirements.txt
+5. **Run the application:**
+   python main.py
+Follow the same usage instructions as above once the application is running.
