@@ -434,7 +434,7 @@ saved_api_key = load_api_key()
 entry_api_key = ttk.Entry(api_frame, width=50)
 entry_api_key.grid(row=0, column=1, pady=5, padx=5, sticky="we")
 entry_api_key.insert(0, saved_api_key)  # Insertar la API key guardada
-#entry_api_key.insert(0, "AIzaSyA7XVmI4d26T2KsS50fCWf75eC2Gta3z0E")
+
 
 # Marco para la conversación
 conversation_frame = ttk.LabelFrame(input_frame, text="Conversación", padding=10)
