@@ -22,15 +22,22 @@ success_sound = pygame.mixer.Sound("success.wav")
 global selected_transcription_model
 selected_transcription_model = "medium"  # Valor predeterminado
 
+# Agregar una variable global para almacenar el conteo de tokens
+global total_token_count
+total_token_count = 0
+
 def save_api_key(api_key):
     with open('api_key.txt', 'w') as f:
         f.write(api_key)
+
 
 def load_api_key():
     if os.path.exists('api_key.txt'):
         with open('api_key.txt', 'r') as f:
             return f.read().strip()
     return ""
+
+
 def show_loading_screen():
     loading_window = tk.Toplevel(root)
     loading_window.title("Cargando")
@@ -77,9 +84,11 @@ def update_state_label(value):
         state_label.config(text="Exacto")
         return "large"
 
+
 def update_model(value):
     global selected_transcription_model
     selected_transcription_model = update_state_label(int(float(value)))
+
 
 def transcribe_audio_file():
     global selected_transcription_model
@@ -114,10 +123,21 @@ def transcribe_audio_file():
 
         thread = threading.Thread(target=transcribe_thread)
         thread.start()
+
+
+def replace_company_name(text, new_company):
+    return text.replace("empresa", new_company)
+
+
 def tafi(text):
+    global total_token_count
     api_key = entry_api_key.get().strip()
+    new_company = entry_company.get().strip()
+
     if not api_key:
         return "Por favor, ingresa tu API Key."
+    if not new_company:
+        return "Por favor, ingresa el nombre de la empresa."
 
     genai.configure(api_key=api_key)
 
@@ -130,7 +150,11 @@ def tafi(text):
         return "El archivo 'content.json' no tiene un formato JSON válido."
     except IOError:
         return "Hubo un error al leer el archivo 'content.json'."
-    content.append(f"input:{text}")
+
+    # Reemplazar el nombre de la empresa en todo el contenido
+    content = [replace_company_name(item, new_company) for item in content]
+
+    content.append(f"input:{replace_company_name(text, new_company)}")
     content.append("output: ")
 
     generation_config = {
@@ -148,10 +172,21 @@ def tafi(text):
     )
     print(content)
     response = model.generate_content(content)
-    return response.text
+
+    # Contar tokens
+    tokens_used = len(' '.join(content).split()) + len(response.text.split())
+    total_token_count += tokens_used
+
+    return replace_company_name(response.text, new_company)
 
 
 def generate_text(api_key, user_input, rubros_calidad):
+    global total_token_count
+    new_company = entry_company.get().strip()
+
+    if not new_company:
+        return "Por favor, ingresa el nombre de la empresa."
+
     genai.configure(api_key=api_key)
 
     try:
@@ -163,7 +198,11 @@ def generate_text(api_key, user_input, rubros_calidad):
         return "El archivo 'content2.json' no tiene un formato JSON válido."
     except IOError:
         return "Hubo un error al leer el archivo 'content2.json'."
-    content.append(f"input: {user_input}")
+
+    # Reemplazar el nombre de la empresa en todo el contenido
+    content = [replace_company_name(item, new_company) for item in content]
+
+    content.append(f"input: {replace_company_name(user_input, new_company)}")
     content.append(f"Rubros de calidad a evaluar:\n{rubros_calidad}")
     content.append("output: ")
     print(content)
@@ -182,18 +221,32 @@ def generate_text(api_key, user_input, rubros_calidad):
     )
 
     response = model.generate_content(content)
-    return response.text
+
+    # Contar tokens
+    tokens_used = len(' '.join(content).split()) + len(response.text.split())
+    total_token_count += tokens_used
+
+    return replace_company_name(response.text, new_company)
 
 
 def on_generate_click():
+    global total_token_count
+    total_token_count = 0  # Reiniciar el contador antes de cada generación
+
     api_key = entry_api_key.get().strip()
     save_api_key(api_key)
-    api_key = entry_api_key.get().strip()
     user_input = entry_user_input.get("1.0", tk.END).strip()
     rubros_calidad = entry_rubros_calidad.get("1.0", tk.END).strip()
+    company = entry_company.get().strip()
+
     if not api_key:
         result_text.delete("1.0", tk.END)
         result_text.insert(tk.END, "Por favor, ingresa tu API Key.")
+        return
+
+    if not company:
+        result_text.delete("1.0", tk.END)
+        result_text.insert(tk.END, "Por favor, ingresa el nombre de la empresa.")
         return
 
     if not user_input:
@@ -210,6 +263,9 @@ def on_generate_click():
         generated_text = generate_text(api_key, user_input, rubros_calidad)
         result_text.delete("1.0", tk.END)
         result_text.insert(tk.END, generated_text)
+
+        # Actualizar el contador de tokens en la interfaz
+        update_token_counter(total_token_count)
     except Exception as e:
         result_text.delete("1.0", tk.END)
         result_text.insert(tk.END, f"Error: {str(e)}")
@@ -219,6 +275,9 @@ def on_generate_click():
 
 
 def tafo():
+    global total_token_count
+    total_token_count = 0  # Reiniciar el contador antes de cada operación
+
     click_sound.play()
     text = entry_user_input.get("1.0", tk.END).strip()
 
@@ -240,15 +299,23 @@ def tafo():
 
         print(polished_text)  # Si quieres mantener la impresión en consola
 
+        # Actualizar el contador de tokens en la interfaz
+        update_token_counter(total_token_count)
+
     except Exception as e:
         result_text.delete("1.0", tk.END)
         result_text.insert(tk.END, f"Error en el procesamiento: {e}")
 
 
 def pulidor_de_transcripcion(text):
+    global total_token_count
     api_key = entry_api_key.get().strip()
+    new_company = entry_company.get().strip()
+
     if not api_key:
         return "Por favor, ingresa tu API Key."
+    if not new_company:
+        return "Por favor, ingresa el nombre de la empresa."
 
     genai.configure(api_key=api_key)
 
@@ -262,7 +329,10 @@ def pulidor_de_transcripcion(text):
     except IOError:
         return "Hubo un error al leer el archivo 'proff.json'."
 
-    content.append(f"input:{text}")
+    # Reemplazar el nombre de la empresa en todo el contenido
+    content = [replace_company_name(item, new_company) for item in content]
+
+    content.append(f"input:{replace_company_name(text, new_company)}")
     content.append("output: ")
     generation_config = {
         "temperature": 0,
@@ -279,7 +349,16 @@ def pulidor_de_transcripcion(text):
     )
     print("Texto enviado al modelo para pulir:", content)
     response = model.generate_content(content)
-    return response.text
+
+    # Contar tokens
+    tokens_used = len(' '.join(content).split()) + len(response.text.split())
+    total_token_count += tokens_used
+
+    return replace_company_name(response.text, new_company)
+
+
+def update_token_counter(count):
+    token_label.config(text=f"Tokens totales utilizados: {count}")
 
 
 def save_rubros():
@@ -347,49 +426,49 @@ def export_results():
         try:
             with open(file_path, "w", encoding="utf-8") as file:
                 html_content = f"""
-                <!DOCTYPE html>
-                <html lang="es">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Resultados de Evaluación</title>
-                    <style>
-                        body {{
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            max-width: 800px;
-                            margin: 0 auto;
-                            padding: 20px;
-                        }}
-                        h1 {{
-                            color: #2c3e50;
-                            border-bottom: 2px solid #3498db;
-                            padding-bottom: 10px;
-                        }}
-                        .result-container {{
-                            background-color: #f9f9f9;
-                            border: 1px solid #ddd;
-                            border-radius: 5px;
-                            padding: 20px;
-                            margin-top: 20px;
-                        }}
-                        .timestamp {{
-                            color: #7f8c8d;
-                            font-size: 0.9em;
-                            margin-top: 20px;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <h1>Resultados de Evaluación</h1>
-                    <div class="result-container">
-                        <pre>{result}</pre>
-                    </div>
-                    <p class="timestamp">Generado el: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}</p>
-                </body>
-                </html>
-                """
+                    <!DOCTYPE html>
+                    <html lang="es">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Resultados de Evaluación</title>
+                        <style>
+                            body {{
+                                font-family: Arial, sans-serif;
+                                line-height: 1.6;
+                                color: #333;
+                                max-width: 800px;
+                                margin: 0 auto;
+                                padding: 20px;
+                            }}
+                            h1 {{
+                                color: #2c3e50;
+                                border-bottom: 2px solid #3498db;
+                                padding-bottom: 10px;
+                            }}
+                            .result-container {{
+                                background-color: #f9f9f9;
+                                border: 1px solid #ddd;
+                                border-radius: 5px;
+                                padding: 20px;
+                                margin-top: 20px;
+                            }}
+                            .timestamp {{
+                                color: #7f8c8d;
+                                font-size: 0.9em;
+                                margin-top: 20px;
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Resultados de Evaluación</h1>
+                        <div class="result-container">
+                            <pre>{result}</pre>
+                        </div>
+                        <p class="timestamp">Generado el: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}</p>
+                    </body>
+                    </html>
+                    """
                 file.write(html_content)
 
             messagebox.showinfo("Éxito", f"Resultados exportados exitosamente a:\n{file_path}")
@@ -401,10 +480,14 @@ def export_results():
             messagebox.showerror("Error", f"Ocurrió un error al exportar los resultados:\n{str(e)}")
 
 
+def toggle_fullscreen():
+    root.attributes('-fullscreen', not root.attributes('-fullscreen'))
+
 # Configuración de la ventana principal
 root = ttk.Window(themename="darkly")
 root.title("Evaluador de Calidad de Agentes de Call Center")
-root.geometry("1000x700")
+root.attributes('-fullscreen', True)  # Iniciar en pantalla completa
+root.bind('<Escape>', lambda event: root.attributes('-fullscreen', False))
 
 # Crear un estilo personalizado
 style = ttk.Style()
@@ -422,9 +505,13 @@ notebook.pack(fill=BOTH, expand=True, padx=20, pady=20)
 input_frame = ttk.Frame(notebook, padding=20)
 notebook.add(input_frame, text="Entrada de Datos")
 
+# Botón para alternar pantalla completa en la esquina superior derecha
+button_fullscreen = create_animated_button(input_frame, "Alternar Pantalla Completa", toggle_fullscreen)
+button_fullscreen.grid(row=0, column=1, sticky="ne", padx=(0, 10), pady=(0, 10))
+
 # Crear un marco para la API Key
 api_frame = ttk.LabelFrame(input_frame, text="Configuración de API", padding=10)
-api_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+api_frame.grid(row=1, column=0, columnspan=2, pady=(0, 20), sticky="ew")
 
 label_api_key = ttk.Label(api_frame, text="API Key:")
 label_api_key.grid(row=0, column=0, pady=5, padx=5, sticky="w")
@@ -435,10 +522,19 @@ entry_api_key = ttk.Entry(api_frame, width=50)
 entry_api_key.grid(row=0, column=1, pady=5, padx=5, sticky="we")
 entry_api_key.insert(0, saved_api_key)  # Insertar la API key guardada
 
+# Marco para el nombre de la empresa
+company_frame = ttk.LabelFrame(input_frame, text="Nombre de la Empresa", padding=10)
+company_frame.grid(row=2, column=0, columnspan=2, pady=(0, 20), sticky="ew")
+
+label_company = ttk.Label(company_frame, text="Empresa:")
+label_company.grid(row=0, column=0, pady=5, padx=5, sticky="w")
+
+entry_company = ttk.Entry(company_frame, width=50)
+entry_company.grid(row=0, column=1, pady=5, padx=5, sticky="we")
 
 # Marco para la conversación
 conversation_frame = ttk.LabelFrame(input_frame, text="Conversación", padding=10)
-conversation_frame.grid(row=1, column=0, columnspan=2, pady=(0, 20), sticky="nsew")
+conversation_frame.grid(row=3, column=0, columnspan=2, pady=(0, 20), sticky="nsew")
 
 entry_user_input = ScrolledText(conversation_frame, width=60, height=10)
 entry_user_input.pack(fill=BOTH, expand=True)
@@ -463,13 +559,12 @@ transcription_slider.pack(side=tk.LEFT, padx=5)
 state_label = ttk.Label(transcribe_frame, text="Preciso")
 state_label.pack(side=tk.LEFT, padx=5)
 
-
 button_dializar = create_animated_button(transcribe_frame, "Dializar", tafo)
 button_dializar.pack(side=tk.RIGHT)
 
 # Marco para los rubros de calidad
 rubros_frame = ttk.LabelFrame(input_frame, text="Rubros de Calidad", padding=10)
-rubros_frame.grid(row=2, column=0, columnspan=2, pady=(0, 20), sticky="nsew")
+rubros_frame.grid(row=4, column=0, columnspan=2, pady=(0, 20), sticky="nsew")
 
 entry_rubros_calidad = ScrolledText(rubros_frame, width=60, height=5)
 entry_rubros_calidad.pack(side=tk.LEFT, fill=BOTH, expand=True)
@@ -485,7 +580,7 @@ button_load_rubros = create_animated_button(button_frame, "Cargar", load_rubros)
 button_load_rubros.pack(pady=2)
 
 button_generate = create_animated_button(input_frame, "Generar Evaluación", on_generate_click)
-button_generate.grid(row=3, column=0, columnspan=2, pady=10)
+button_generate.grid(row=5, column=0, columnspan=2, pady=10)
 
 # Pestaña de resultado
 result_frame = ttk.Frame(notebook, padding=20)
@@ -494,14 +589,18 @@ notebook.add(result_frame, text="Resultado")
 result_text = ScrolledText(result_frame, wrap=tk.WORD, width=80, height=20)
 result_text.pack(fill=BOTH, expand=True)
 
+# Agregar el label para mostrar los tokens
+token_label = ttk.Label(result_frame, text="Tokens totales utilizados: 0")
+token_label.pack(pady=5)
+
 # Agregar el botón de exportar
 button_export = create_animated_button(result_frame, "Exportar Resultados", export_results)
 button_export.pack(pady=10)
 
 # Configurar el peso de las filas y columnas
 input_frame.columnconfigure(0, weight=1)
-input_frame.rowconfigure(1, weight=1)
-input_frame.rowconfigure(2, weight=1)
+input_frame.rowconfigure(3, weight=1)
+input_frame.rowconfigure(4, weight=1)
 
 # Configurar tooltips
 ToolTip(button_transcribe, "Transcribe el audio seleccionado")
@@ -511,6 +610,7 @@ ToolTip(button_save_rubros, "Guarda los rubros de calidad")
 ToolTip(button_load_rubros, "Carga rubros de calidad guardados")
 ToolTip(transcription_slider, "Selecciona el modelo de transcripción a utilizar")
 ToolTip(button_export, "Exporta los resultados en formato HTML")
+ToolTip(button_fullscreen, "Alterna entre pantalla completa y ventana normal")
 
 update_model(1)  # 1 corresponde a "Preciso" o "medium"
 # Iniciar la interfaz
