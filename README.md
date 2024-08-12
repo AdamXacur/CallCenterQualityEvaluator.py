@@ -71,3 +71,6 @@ cd CallCenterQualityEvaluator.py
 5. **Run the application:**
    python main.py
 Follow the same usage instructions as above once the application is running.
+
+Tutorial
+For a step-by-step video tutorial on setting up and using the application, watch: [CallCenterQualityEvaluator Tutorial]([URL](https://www.youtube.com/watch?v=mVsjMZU6hf8))
